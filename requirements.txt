@@ -1,0 +1,16 @@
+# 微信 4.x 自动化（读本地数据库收消息 + UIA/坐标发送）
+# 复刻自 wxauto，Apache-2.0，支持微信 4.1.x
+wechatauto-replica>=1.2.6.1
+
+# ---- 下面三个只给「通知材料库」用（dsbot/knowledge.py）----
+# 不装也能跑：docx 用标准库直接读，xlsx 走 zip 兜底解析，检索分词退化成双字切分。
+# 装上之后：PDF 能读、xlsx 更准、中文分词更准。
+jieba>=0.42.1          # 中文分词，装了就明显更准；不装则用「单字+双字」兜底
+openpyxl>=3.1.5        # 读 xlsx；不装则退化成 zip 里的共享字符串表
+pypdf>=4.0.0           # 读文本型 PDF；扫描件（图片型）走下面的 Windows OCR
+
+# ---- 扫描件 OCR：不用额外装东西 ----
+# 没用 Tesseract 那种第三方引擎。图片/扫描件认字用的是 Windows 10/11 自带的
+# OCR（Windows.Media.Ocr）+ 自带的 PDF 渲染器（Windows.Data.Pdf），离线、免费；
+# 调它的是上面 wechatauto-replica 已经带进来的 winsdk（见 dsbot/ocr_worker.py）。
+# 前提是 Windows 里装了中文语言包（一般都有）；没装的话 doctor.bat 会告诉你。

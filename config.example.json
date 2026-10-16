@@ -1,0 +1,114 @@
+{
+  "_说明": "复制本文件为 config.json 后再改。所有字段都有默认值，没写就用默认。",
+
+  "model": {
+    "name": "deepseek-chat",
+    "base_url": "https://api.deepseek.com",
+    "temperature": 0.7,
+    "max_tokens": 800,
+    "timeout": 120
+  },
+
+  "persona": "你是「{owner}」本人，正在用自己的微信和对方聊天。\n\n要求：\n1. 用中文口语回复，像真人发微信一样：短句、自然、偶尔用语气词，不要写成小作文。\n2. 默认 1~2 句话，除非对方问了需要展开的问题。\n3. 绝不暴露你是 AI、机器人或程序；被问到就自然带过。\n4. 不知道的事就说不清楚 / 回头确认，不要硬编。\n5. 涉及钱、身份证、银行卡、验证码、密码、合同、法律纠纷、体检报告等敏感话题，一律不要给具体承诺，回复类似「这个我回头跟你说」并把话题收住。\n6. 不发链接，不主动提任何产品、课程、投资。",
+
+  "owner_name": "我",
+
+  "reply": {
+    "_说明": "回复节奏。delay_min~delay_max 是收到消息后等多久再回，模拟真人打字；连发的消息会合并成一条一起处理。",
+    "delay_min": 3.0,
+    "delay_max": 8.0,
+    "batch_window": 2.5,
+    "max_reply_chars": 300,
+    "typing_speed_cps": 6.0,
+    "_失败重试说明": "DeepSeek 高峰会超时或返回 503。生成失败不会丢消息：先记成待办，retry_delay 秒后自动重来，最多 max_retries 次；之后后台每 pending_flush_seconds 秒扫一遍接着试。拖过 pending_max_age_hours 小时还补不上才放弃（日志会写明）。",
+    "retry_delay": 20.0,
+    "max_retries": 2,
+    "pending_flush_seconds": 120.0,
+    "pending_max_age_hours": 2.0
+  },
+
+  "trigger": {
+    "_说明": "决定哪些消息才回。mode=whitelist 时只回 whitelist 里的会话；mode=all 时回所有私聊（不推荐）。",
+    "mode": "whitelist",
+    "whitelist": [],
+    "blacklist": [],
+    "groups": "ignore",
+    "at_names": [],
+    "extra_at_ids": [],
+    "at_text_fallback": false,
+    "_群聊说明": "groups=ignore 群聊不回；改成 at 就是「只有 @ 我才回」（@所有人 不算）；all 是群里全回。at 模式下，@ 是谁由微信自己记的名单（wxid）判定，重名也不会认错，读不到名单时才退回按 at_names / 你的微信昵称 / 该群群昵称匹配正文。群里只有「@ 我 + 发送者在 whitelist 里」才回；想让某个群谁 @ 都回，就把群名也加进 whitelist。",
+    "require_prefix": "",
+    "cooldown": 5.0,
+    "ignore_keywords": ["退订", "别回了", "不用回"],
+    "_应一声说明": "对方只是应一声（行 / ok / 好的 / 谢谢 / 👍）就不用回 —— 回了像话痨，也更容易露馅。这种消息会记进它的记忆（知道对方应过了），只是不开口。带问号、带内容的一律照回；不在白名单的会话说了也不算。想多略过几个词，往 ack_words 里加（比如「妥妥的」）。",
+    "skip_acks": true,
+    "ack_words": [],
+    "quiet_hours": {
+      "enabled": false,
+      "start": "23:30",
+      "end": "07:30"
+    }
+  },
+
+  "memory": {
+    "_说明": "每个会话独立记忆。max_turns 是记住多少轮；超过 该轮数的旧内容会被丢弃。",
+    "max_turns": 12,
+    "ttl_hours": 72,
+    "db_path": "data/memory.sqlite3"
+  },
+
+  "wechat": {
+    "_说明": "读哪个微信号。留空 = 自动用最近活跃（最后登录过）的那个；同一台电脑登过多个号时，可以在这里写死账号目录名（python main.py --account list 会列出来）。",
+    "account": "",
+    "verify": true,
+    "_verify说明": "发送后回读微信数据库确认。true = 每条多花 1~2 秒，但不会因为界面误判把同一句话发两遍（对方收到重复消息）。除非你确认发送特别慢，否则别关。"
+  },
+  "sync": {
+    "_说明": "班级记忆同步：和另一个 Codex 会话（比如「班长助理」）共用一份记忆。机器人把同学侧问答实时写进这个目录（dialog.jsonl / dialog.md / bot-status.md），每次回复前再读回目录里的 knowledge.md 和 inbox/*.md 当作班级记忆；会话那边一改，这边下一条回复立刻生效，不用重启。dir 留空或 enabled=false = 关掉。",
+    "enabled": false,
+    "dir": "",
+    "max_chars": 4000,
+    "dialog_keep": 200,
+    "refresh_seconds": 15,
+    "session_read": false,
+    "session_thread": "",
+    "session_items": 12,
+    "session_max_chars": 3000,
+    "session_tail_mb": 3,
+    "session_skip_user": [],
+    "_session_说明": "让机器人直接读另一个 Codex 会话的记忆：从 %USERPROFILE%\\.codex\\sessions 里它的记录文件按字节增量读出「我（班长）说了什么 + 它最后回了什么」，实时同步给机器人当班级记忆。填上那个会话的 thread id 才生效（会话链接里的那串 uuid）。身份证号/手机号/长号码进提示词前会被脱敏，成规模的名册整条丢弃。"
+  },
+
+  "knowledge": {
+    "_说明": "通知材料库：让 AI 照着通知原文回答，而不是自己编。来源 = knowledge/ 目录里的文件 ＋ 微信里收到/发出的 docx/pdf/xlsx。抽完文本会过隐私闸门：含身份证号、5 个以上手机号、20 处以上学号一类长编号的，以及（仅微信自动收集的）文件名像花名册的不入库。exclude_keywords 按文件名再排除一批，比如迎新资料包和学生作业。",
+    "enabled": true,
+    "dirs": ["knowledge"],
+    "wechat_files": true,
+    "auto_index": true,
+    "max_chunks": 4,
+    "max_chars": 2000,
+    "recent": 5,
+    "min_chars": 40,
+    "max_file_mb": 12.0,
+    "max_docs": 400,
+    "exclude_keywords": [],
+    "_exclude_keywords_示例": ["项目计划书", "攻略", "科普", "旅游"],
+    "ocr": {
+      "_说明": "扫描件 OCR：打印出来再拍照/扫描的 PDF 没有文字层，用 Windows 自带 OCR 认成文字（离线、免费、不用装 Tesseract）；开着的时候图片（jpg/png）也会一并收进来。关掉的话扫描件和图片都会被跳过。",
+      "enabled": true,
+      "lang": "",
+      "dpi": 300,
+      "max_pages": 10,
+      "max_chars": 3000,
+      "trigger_chars": 60,
+      "_lang_说明": "留空 = 自动挑（优先 zh-Hans-CN）。",
+      "_trigger_chars_说明": "文字层少于这个字数才试 OCR，正常 PDF 不会白跑。"
+    },
+    "db_path": "data/knowledge.sqlite3"
+  },
+
+  "log": {
+    "file": "data/bot.log",
+    "level": "INFO"
+  }
+}

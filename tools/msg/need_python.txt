@@ -1,0 +1,4 @@
+[错误] 没有找到 64 位的 Python。
+
+请到 https://www.python.org/downloads/ 下载安装 Python 3.10 或更高版本，
+安装第一步记得勾选 "Add python.exe to PATH"。

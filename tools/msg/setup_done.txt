@@ -1,0 +1,6 @@
+  安装完成。接下来两件事：
+
+  1) 用记事本打开 .env，把 DEEPSEEK_API_KEY 换成你自己的 Key
+     申请地址：https://platform.deepseek.com/api_keys
+
+  2) 双击 doctor.bat 自检，再双击 run.bat 启动

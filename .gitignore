@@ -1,0 +1,22 @@
+.venv/
+__pycache__/
+*.pyc
+
+# 私密与运行时数据，不要提交
+.env
+config.json
+data/
+
+# 自检/调试产生的东西
+*.log
+.pytest_cache/
+
+# 从库里导出的「转文字版」正文，随时可以重新生成
+extracted/
+
+# 运行时产生的其它东西
+wechatauto_logs/
+*.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal
+*.bak
